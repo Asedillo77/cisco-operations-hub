@@ -1,0 +1,15 @@
+{
+  "device_type": "edge_router",
+  "netmiko_device_type": "cisco_ios",
+  "route_warning_drop_percent": 25,
+  "ospf_neighbors_required": true,
+  "commands": [
+    "show version",
+    "show ip interface brief",
+    "show ip protocols vrf 2",
+    "show ip ospf neigh",
+    "show sdwan control connections",
+    "show ip route",
+    "show ip route vrf 2"
+  ]
+}

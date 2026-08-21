@@ -1,0 +1,43 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "network-connectivity-evidence"
+version = "0.1.0"
+description = "Read-only Cisco edge connectivity checks with plain-language HTML and JSON evidence reports"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Dante Rivera" }]
+dependencies = ["jinja2>=3.1", "netmiko>=4.4"]
+
+[project.optional-dependencies]
+solarwinds = ["orionsdk>=0.4"]
+dev = ["pytest>=8.0", "ruff>=0.9"]
+
+[project.scripts]
+connectivity-evidence = "site_connectivity.standalone:main"
+connectivity-evidence-gui = "site_connectivity.gui:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/site_connectivity"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+exclude = ["baseline"]
+
+[tool.ruff.lint]
+select = ["A", "ANN", "B", "D", "E", "F", "I", "N", "RUF", "S", "SIM", "UP"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D", "S101"]
+"scripts/**" = ["D"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

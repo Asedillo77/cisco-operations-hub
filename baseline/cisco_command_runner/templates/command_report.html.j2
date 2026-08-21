@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cisco Command Runner — {{ view | title }} Report</title>
+    <style>
+        :root {
+            --ink: #18252B;
+            --muted: #5B6B72;
+            --surface: #FFFFFF;
+            --page: #F4F7F7;
+            --teal: #007F78;
+            --teal-dark: #075B58;
+            --turquoise: #20B2AA;
+            --line: #CAD8D8;
+            --soft: #EEF7F6;
+            --amber: #B26A00;
+            --danger: #B42318;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 24px; color: var(--ink); background: var(--page); font: 14px/1.45 Arial, sans-serif; }
+        .report { width: calc(100% - 2px); margin: auto; border: 1px solid var(--line); background: var(--surface); }
+        header { padding: 22px 24px; color: var(--surface); background: var(--teal-dark); border-bottom: 5px solid var(--turquoise); }
+        h1 { margin: 0 0 6px; font: 800 30px/1 "Arial Narrow", Aptos, sans-serif; text-transform: uppercase; }
+        header p { margin: 0; }
+        .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 10px; padding: 14px; background: var(--soft); border-bottom: 1px solid var(--line); }
+        .card { padding: 9px 11px; border: 1px solid var(--line); border-top: 4px solid var(--teal); background: var(--surface); }
+        .card strong { display: block; font-size: 20px; color: var(--teal-dark); }
+        .section-title { margin: 16px 16px 0; padding: 9px 12px; color: var(--surface); background: var(--teal); font-size: 16px; text-transform: uppercase; }
+        .table-wrap { width: 100%; padding: 0 16px 18px; overflow-x: auto; }
+        table { width: max-content; min-width: 100%; table-layout: auto; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 8px 10px; border: 1px solid var(--line); text-align: left; vertical-align: top; white-space: nowrap; word-break: normal; }
+        th { position: sticky; top: 0; color: var(--surface); background: var(--teal); font-size: 12px; text-transform: uppercase; }
+        tbody tr:nth-child(even) { background: #F5FBFA; }
+        tbody tr:hover { background: var(--soft); }
+        .status { display: inline-block; padding: 2px 8px; border-radius: 12px; color: var(--surface); font-size: 11px; font-weight: 800; text-transform: uppercase; }
+        .status-success { background: #247A4B; }
+        .status-failed { background: var(--danger); }
+        .status-planned, .status-skipped { background: var(--amber); }
+        .result-cell { min-width: 310px; max-width: 620px; white-space: normal; }
+        .summary-cell { min-width: 230px; max-width: 420px; white-space: normal; }
+        .summary-field { display: block; margin-bottom: 4px; }
+        .summary-field:last-child { margin-bottom: 0; }
+        .device-cell { vertical-align: middle; background: var(--soft); font-weight: 700; }
+        .message { min-width: 220px; max-width: 360px; white-space: normal; }
+        details { min-width: 230px; }
+        summary { color: var(--teal-dark); cursor: pointer; font-weight: 800; }
+        pre { max-width: 760px; max-height: 430px; margin: 8px 0 0; padding: 10px; overflow: auto; border-left: 5px solid var(--turquoise); background: #16262B; color: #F7F7F7; white-space: pre-wrap; word-break: normal; font: 12px/1.4 Consolas, monospace; }
+        .preview { display: block; max-width: 420px; margin-bottom: 4px; color: #333; }
+        footer { padding: 12px 18px; border-top: 1px solid var(--line); background: var(--page); color: var(--muted); font-size: 12px; }
+        @media print { body { padding: 0; } details:not([open]) > *:not(summary) { display: block; } .report { border: 0; } th { position: static; } }
+    </style>
+</head>
+<body>
+<main class="report">
+    <header>
+        <h1>Cisco Command Runner</h1>
+        <p>{{ view | title }} report · {{ report.mode | title }} mode · {{ report.generated_at }}</p>
+    </header>
+    <section class="summary">
+        <div class="card"><strong>{{ report.requested_devices }}</strong>Devices</div>
+        <div class="card"><strong>{{ report.requested_commands }}</strong>Commands per device</div>
+        <div class="card"><strong>{{ report.counts.success }}</strong>Successful</div>
+        <div class="card"><strong>{{ report.counts.failed }}</strong>Failed</div>
+        <div class="card"><strong>{{ report.counts.planned }}</strong>Dry-run planned</div>
+        <div class="card"><strong>{{ report.result_handling | replace('_', ' ') | title }}</strong>Result handling</div>
+    </section>
+    <h2 class="section-title">Command Results</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                {% if view == "short" %}
+                <tr><th>Hostname</th><th>IP Address</th><th>Command Run</th><th>Result</th><th>Summary</th></tr>
+                {% else %}
+                <tr><th>Row</th><th>Hostname</th><th>IP Address</th><th>Device Type</th><th>Command</th><th>Status</th><th>Started</th><th>Duration</th><th>Message</th><th>Result</th><th>Summary</th></tr>
+                {% endif %}
+            </thead>
+            <tbody>
+            {% for group in result_groups %}
+            {% for item in group %}
+                <tr>
+                    {% if loop.first %}
+                    {% if view == "standard" %}<td class="device-cell" rowspan="{{ group | length }}">{{ item.inventory_row }}</td>{% endif %}
+                    <td class="device-cell" rowspan="{{ group | length }}">{{ item.detected_hostname or item.hostname }}</td>
+                    <td class="device-cell" rowspan="{{ group | length }}">{{ item.ip_address }}</td>
+                    {% if view == "standard" %}<td class="device-cell" rowspan="{{ group | length }}">{{ item.device_type | replace('_', ' ') | title }}</td>{% endif %}
+                    {% endif %}
+                    <td><code>{{ item.command }}</code></td>
+                    {% if view == "standard" %}
+                    <td><span class="status status-{{ item.status }}">{{ item.status }}</span></td>
+                    <td>{{ item.started_at }}</td>
+                    <td>{{ "%.3f" | format(item.duration_seconds) }} s</td>
+                    <td class="message">{{ item.message }}</td>
+                    {% endif %}
+                    <td class="result-cell">
+                        {% if item.output %}
+                        <span class="preview">{{ preview(item.output) }}</span>
+                        <details><summary>Show full result</summary><pre>{{ item.output }}</pre></details>
+                        {% else %}
+                        <span class="status status-{{ item.status }}">{{ item.status }}</span>
+                        {% if view == "short" %}<br>{{ item.message }}{% endif %}
+                        {% endif %}
+                    </td>
+                    <td class="summary-cell">
+                        {% if item.extracted_fields %}
+                        {% for label, value in item.extracted_fields.items() %}
+                        <span class="summary-field"><strong>{{ label }}:</strong> {{ value }}</span>
+                        {% endfor %}
+                        {% elif report.result_handling == "common_summary" %}
+                        No common summary available
+                        {% else %}
+                        Not requested
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <footer>Run ID: {{ report.run_id }} · Complete outputs are also available in JSON, detailed CSV, and raw text files.</footer>
+</main>
+</body>
+</html>

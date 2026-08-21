@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "catalyst-port-capacity-auditor"
+version = "0.1.0"
+description = "A dry-run-first Cisco Catalyst Center physical switchport capacity reporting tool."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "Dante Rivera" }]
+dependencies = ["jinja2>=3.1,<4", "requests>=2.32,<3"]
+
+[project.optional-dependencies]
+ssh = ["netmiko>=4.4,<5"]
+dev = ["pytest>=8,<10", "ruff>=0.9,<1"]
+
+[project.scripts]
+catalyst-port-capacity = "catalyst_port_capacity.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/catalyst_port_capacity"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+

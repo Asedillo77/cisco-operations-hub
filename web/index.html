@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{CSRF_TOKEN}}">
+  <title>Cisco Operations Hub</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">Local operations workspace</p>
+      <h1>Cisco Operations Hub</h1>
+      <p class="lede">One safe interface for independently tested network tools.</p>
+    </div>
+    <span class="local-badge">Local only</span>
+  </header>
+
+  <main>
+    <section aria-labelledby="tools-heading">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Choose a workflow</p>
+          <h2 id="tools-heading">Available tools</h2>
+        </div>
+        <p>Preserved logic stays inside each tool adapter.</p>
+      </div>
+      <div id="tool-grid" class="tool-grid" aria-live="polite"></div>
+    </section>
+
+    <section id="workspace" class="workspace" aria-labelledby="workspace-title" hidden>
+      <div class="workspace-heading">
+        <div>
+          <p class="eyebrow">Selected workflow</p>
+          <h2 id="workspace-title"></h2>
+          <p id="workspace-summary"></p>
+        </div>
+        <span id="mode-badge" class="mode-badge">Dry-run</span>
+      </div>
+
+      <form id="tool-form">
+        <div id="fields" class="form-grid"></div>
+        <fieldset class="execution-panel">
+          <legend>Safe execution</legend>
+          <label class="switch-row">
+            <input id="apply" name="apply" type="checkbox">
+            <span>
+              <strong id="apply-label">Enable live collection</strong>
+              <small id="apply-help">Off by default. Validation and report planning make no device connections.</small>
+            </span>
+          </label>
+          <label class="switch-row">
+            <input id="debug" name="debug" type="checkbox">
+            <span><strong>Debug logging</strong><small>Include additional troubleshooting detail.</small></span>
+          </label>
+          <label id="confirmation-row" class="field full-width" hidden>
+            <span>Type <code>RUN LIVE READ-ONLY COMMANDS</code> to confirm</span>
+            <input id="confirmation" name="confirmation" autocomplete="off">
+          </label>
+        </fieldset>
+        <div class="actions">
+          <button id="validate-button" type="button" class="button secondary">Validate plan</button>
+          <button id="run-button" type="submit" class="button primary">Create dry-run report</button>
+        </div>
+      </form>
+
+      <section id="result" class="result-panel" aria-live="polite" hidden>
+        <h3 id="result-title"></h3>
+        <p id="result-message"></p>
+        <dl id="result-details" class="result-details"></dl>
+        <pre id="result-logs" hidden></pre>
+      </section>
+    </section>
+  </main>
+
+  <footer>Public-safe portfolio theme · No credentials are stored in the browser</footer>
+  <script src="/app.js" defer></script>
+</body>
+</html>

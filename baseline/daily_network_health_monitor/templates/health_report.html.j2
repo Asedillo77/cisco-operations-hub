@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Daily Network Health</title>
+  <style>
+    :root { --navy:#12344d; --blue:#1675a9; --bg:#f3f6f8; --line:#d7e0e6; --healthy:#247a45; --informational:#326b91; --warning:#a76500; --critical:#b42318; --unknown:#667085; --failed:#7a271a; }
+    body { margin:0; color:#172b3a; background:var(--bg); font:14px/1.45 "Segoe UI",Arial,sans-serif; }
+    header { background:linear-gradient(120deg,var(--navy),var(--blue)); color:white; padding:28px 5vw; }
+    header h1 { margin:0 0 5px; font-size:27px; }
+    main { max-width:1450px; margin:22px auto; padding:0 20px 40px; }
+    .summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:20px; }
+    .card { background:white; border:1px solid var(--line); border-radius:8px; padding:15px; box-shadow:0 2px 7px #12344d12; }
+    .card strong { display:block; font-size:22px; margin-top:4px; }
+    button.card { color:inherit; cursor:pointer; font:inherit; text-align:left; transition:transform .12s ease,box-shadow .12s ease; }
+    button.card:hover { box-shadow:0 4px 12px #12344d24; transform:translateY(-1px); }
+    button.card[aria-pressed="true"] { border-color:var(--blue); box-shadow:0 0 0 2px #1675a933; }
+    button.card:focus-visible { outline:3px solid #69b9e4; outline-offset:2px; }
+    .filter-note { margin:-8px 0 14px; color:#475467; }
+    .table-wrap { overflow-x:auto; background:white; border:1px solid var(--line); border-radius:8px; }
+    table { width:100%; border-collapse:collapse; }
+    th,td { padding:10px 12px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+    td.grouped { background:#f8fafb; border-right:1px solid var(--line); vertical-align:top; }
+    th { background:#eaf1f5; color:var(--navy); white-space:nowrap; }
+    .badge { display:inline-block; color:white; border-radius:12px; padding:2px 9px; font-weight:600; text-transform:uppercase; font-size:11px; }
+    .healthy { background:var(--healthy); } .informational { background:var(--informational); } .warning { background:var(--warning); } .critical { background:var(--critical); } .failed { background:var(--failed); } .unknown,.planned { background:var(--unknown); }
+    details { min-width:320px; } pre { max-height:380px; overflow:auto; background:#102b3d; color:#e8f2f7; padding:12px; border-radius:5px; white-space:pre-wrap; }
+  </style>
+</head>
+<body>
+<header><h1>Daily Network Health Monitor</h1><div>{{ report.generated_at }} · {{ report.mode|upper }} · Run {{ report.run_id }}</div></header>
+<main>
+  <section class="summary">
+    <button class="card filter-card" type="button" data-filter="all" aria-pressed="true">Overall · Show all<strong><span class="badge {{ report.overall_status }}">{{ report.overall_status }}</span></strong></button>
+    <div class="card">Devices<strong>{{ report.requested_devices }}</strong></div>
+    <button class="card filter-card" type="button" data-filter="healthy" aria-pressed="false">Healthy checks<strong>{{ report.counts.healthy }}</strong></button>
+    <button class="card filter-card" type="button" data-filter="informational" aria-pressed="false">Informational<strong>{{ report.counts.informational }}</strong></button>
+    <button class="card filter-card" type="button" data-filter="warning" aria-pressed="false">Warnings<strong>{{ report.counts.warning }}</strong></button>
+    <button class="card filter-card" type="button" data-filter="critical" aria-pressed="false">Critical<strong>{{ report.counts.critical }}</strong></button>
+    <button class="card filter-card" type="button" data-filter="unknown" aria-pressed="false">Unknown<strong>{{ report.counts.unknown }}</strong></button>
+    <button class="card filter-card" type="button" data-filter="failed" aria-pressed="false">Collection failed<strong>{{ report.counts.failed }}</strong></button>
+  </section>
+  <p class="filter-note" id="filter-note" aria-live="polite">Showing all health-check results.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Hostname</th><th>IP Address</th><th>Type</th><th>Command</th><th>Collection</th><th>Health</th><th>Message</th><th>Metrics</th><th>Evidence</th></tr></thead>
+    <tbody>
+    {% for device_group in report.results|groupby("inventory_row") %}
+    {% for result in device_group.list %}
+      <tr data-group="{{ device_group.grouper }}" data-health="{{ result.health_status }}">
+        {% if loop.first %}
+        <td class="grouped" rowspan="{{ device_group.list|length }}"><strong>{{ result.hostname or "Not available" }}</strong></td>
+        <td class="grouped" rowspan="{{ device_group.list|length }}">{{ result.ip_address }}</td>
+        <td class="grouped" rowspan="{{ device_group.list|length }}">{{ result.device_type }}</td>
+        {% endif %}
+        <td><code>{{ result.command }}</code></td>
+        <td>{{ result.collection_status }}</td><td><span class="badge {{ result.health_status }}">{{ result.health_status }}</span></td>
+        <td>{{ result.message }}</td><td>{{ result.metrics }}</td>
+        <td>{% if result.output %}<details><summary>Show raw output</summary><pre>{{ result.output }}</pre></details>{% else %}No output{% endif %}</td>
+      </tr>
+    {% endfor %}
+    {% endfor %}
+    </tbody>
+  </table></div>
+  <p class="card" id="no-results" hidden>No results match this health filter.</p>
+</main>
+<script>
+  (() => {
+    const rows = Array.from(document.querySelectorAll("tbody tr[data-health]"));
+    const buttons = Array.from(document.querySelectorAll(".filter-card"));
+    const note = document.getElementById("filter-note");
+    const noResults = document.getElementById("no-results");
+    const groups = new Map();
+
+    rows.forEach((row) => {
+      const key = row.dataset.group;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(row);
+    });
+
+    const groupState = new Map();
+    groups.forEach((groupRows, key) => {
+      groupState.set(key, {
+        rows: groupRows,
+        cells: Array.from(groupRows[0].querySelectorAll(":scope > td.grouped")),
+      });
+    });
+
+    function placeGroupCells(cells, row, rowspan) {
+      cells.forEach((cell) => cell.setAttribute("rowspan", rowspan));
+      [...cells].reverse().forEach((cell) => row.insertBefore(cell, row.firstChild));
+    }
+
+    function applyFilter(filter) {
+      let visibleCount = 0;
+      groupState.forEach(({ rows: groupRows, cells }) => {
+        const matches = filter === "all"
+          ? groupRows
+          : groupRows.filter((row) => row.dataset.health === filter);
+        groupRows.forEach((row) => { row.hidden = true; });
+        if (!matches.length) return;
+        placeGroupCells(cells, matches[0], matches.length);
+        matches.forEach((row) => { row.hidden = false; });
+        visibleCount += matches.length;
+      });
+
+      buttons.forEach((button) => {
+        button.setAttribute("aria-pressed", String(button.dataset.filter === filter));
+      });
+      const label = filter === "all" ? "all" : filter;
+      note.textContent = `Showing ${visibleCount} ${label} health-check result${visibleCount === 1 ? "" : "s"}.`;
+      noResults.hidden = visibleCount !== 0;
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => applyFilter(button.dataset.filter));
+    });
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.pytest_tmp/
+.ruff_cache/
+.venv/
+credentials/credentials.txt
+outputs/staging/*
+outputs/ready/*
+outputs/archive/*
+!outputs/staging/.gitkeep
+!outputs/ready/.gitkeep
+!outputs/archive/.gitkeep

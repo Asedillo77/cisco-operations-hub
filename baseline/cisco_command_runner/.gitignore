@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+credentials/credentials.txt
+outputs/*
+!outputs/.gitkeep
+reports/
+credentials.txt
+*.log
+dist/
+build/
+.package_audit/
+.test_tmp*/
+.wheel_install*/

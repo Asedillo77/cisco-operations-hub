@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cisco Catalyst Port Capacity Report</title>
+  <style>
+    :root { --ink:#18252b; --muted:#5b6b72; --teal:#007f78; --teal-dark:#075b58; --line:#cad8d8; --soft:#eef7f6; --amber:#fff3cd; --green:#247a4b; --danger:#b42318; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:#f4f7f7; font:14px/1.45 Arial,sans-serif; }
+    header { padding:28px 34px; color:white; background:var(--teal-dark); border-bottom:5px solid #20b2aa; }
+    h1 { margin:0 0 6px; font-size:26px; }
+    h2 { margin:26px 0 10px; color:var(--teal-dark); font-size:18px; }
+    h3 { margin:0; padding:10px 12px; color:white; background:var(--teal-dark); font-size:15px; }
+    main { max-width:1500px; margin:auto; padding:22px; }
+    .summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+    .metric { padding:14px; background:white; border:1px solid var(--line); border-top:4px solid var(--teal); border-radius:6px; }
+    .metric strong { display:block; font-size:23px; }
+    .warning { margin-top:8px; padding:10px 12px; background:var(--amber); border-left:4px solid #d99b00; }
+    .table-wrap { max-width:100%; overflow-x:auto; background:white; border:1px solid var(--line); }
+    .device-ports { margin:0 0 18px; border:1px solid var(--line); background:white; }
+    table { width:max-content; min-width:100%; border-collapse:collapse; }
+    th { padding:10px; color:white; text-align:left; white-space:nowrap; background:var(--teal); }
+    td { padding:9px 10px; border-bottom:1px solid #e2e8e8; vertical-align:top; white-space:nowrap; }
+    tbody tr:nth-child(even) { background:var(--soft); }
+    .wrap { min-width:160px; max-width:360px; white-space:normal; overflow-wrap:anywhere; }
+    .message { min-width:220px; max-width:460px; white-space:normal; overflow-wrap:anywhere; }
+    .badge { display:inline-block; min-width:92px; padding:3px 7px; color:white; text-align:center; border-radius:3px; font-weight:bold; }
+    .ACTIVE,.HIGH,.SUCCESS { background:var(--green); } .POTENTIALLY_UNUSED,.UNUSED_DOWN { background:#a76000; } .REVIEW,.UNKNOWN,.NOT_REQUESTED { background:#59656a; } .LOW,.FAILED { background:var(--danger); }
+    .legend { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:10px; }
+    .legend div { padding:12px; background:white; border:1px solid var(--line); }
+    footer { margin-top:24px; color:var(--muted); font-size:12px; }
+    @media (max-width:700px) { header { padding:22px; } main { padding:14px; } .summary { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  </style>
+</head>
+<body>
+<header><h1>Cisco Catalyst Port Capacity Report</h1><div>Generated {{ report.generated_at }} ({{ report.timezone }})</div></header>
+<main>
+  <section class="summary">
+    <div class="metric"><span>Devices</span><strong>{{ report.counts.devices }}</strong></div>
+    <div class="metric"><span>Physical ports</span><strong>{{ report.counts.ports }}</strong></div>
+    <div class="metric"><span>Active</span><strong>{{ report.counts.active }}</strong></div>
+    <div class="metric"><span>Unused/down</span><strong>{{ report.counts.potentially_unused }}</strong></div>
+    <div class="metric"><span>Review</span><strong>{{ report.counts.review }}</strong></div>
+  </section>
+
+  <h2>Switch Summary</h2>
+  <div class="table-wrap">
+    <table class="device-summary">
+      <thead><tr><th>Switch Name</th><th>Management IP</th><th>Uptime</th><th>Observed Days</th><th>Confidence</th><th>DNAC Status</th><th>CLI Status</th><th>Collection Message</th><th>CLI Message</th></tr></thead>
+      <tbody>
+      {% for device in report.devices %}
+        <tr>
+          <td><strong>{{ device.name }}</strong></td>
+          <td>{{ device.management_ip }}</td>
+          <td>{{ device.uptime }}</td>
+          <td>{{ device.uptime_days if device.uptime_days is not none else 'Unknown' }}</td>
+          <td><span class="badge {{ device.confidence }}">{{ device.confidence }}</span></td>
+          <td><span class="badge {{ device.collection_status|upper }}">{{ device.collection_status }}</span></td>
+          <td><span class="badge {{ device.cli_validation_status|upper }}">{{ device.cli_validation_status }}</span></td>
+          <td class="message">{{ device.message or '-' }}</td>
+          <td class="message">{{ device.cli_validation_message or '-' }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="9">No device summary was collected.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% for device in report.devices %}
+    {% if device.uptime_days is not none and device.uptime_days < report.observation_threshold_days %}
+      <div class="warning"><strong>{{ device.name }}:</strong> less than {{ report.observation_threshold_days }} days of uptime. Unused-port findings have limited observation history.</div>
+    {% endif %}
+  {% endfor %}
+
+  <h2>Physical Port Evidence</h2>
+  {% for device_name, device_ports in report.ports|groupby('device_name') %}
+  <section class="device-ports">
+    <h3>{{ device_name }}</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Port</th><th>Description</th><th>MAC Address</th><th>Admin</th><th>Operational</th><th>Last Input</th><th>Last Output</th><th>Days Unused</th><th>Observed Days</th><th>Confidence</th><th>Usage</th><th>Status</th><th>Assessment</th></tr></thead>
+        <tbody>
+        {% for port in device_ports %}
+          <tr><td>{{ port.port_name }}</td><td class="wrap">{{ port.description or '-' }}</td><td>{{ port.mac_address or '-' }}</td><td>{{ port.admin_status }}</td><td>{{ port.operational_status }}</td><td>{{ port.last_input or '-' }}</td><td>{{ port.last_output or '-' }}</td><td>{{ port.days_unused if port.days_unused is not none else '-' }}</td><td>{{ port.observed_unused_days if port.observed_unused_days is not none else '-' }}</td><td><span class="badge {{ port.confidence }}">{{ port.confidence }}</span></td><td><span class="badge {{ port.usage_flag }}">{{ port.usage_flag }}</span></td><td><span class="badge {{ port.status|upper }}">{{ port.status }}</span></td><td class="message">{{ port.message }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% else %}
+  <div class="table-wrap"><table><tbody><tr><td>No interface data was collected.</td></tr></tbody></table></div>
+  {% endfor %}
+
+  <h2>How To Read This Report</h2>
+  <section class="legend">
+    <div><strong>Days Unused</strong><br>Time since the most recent incoming or outgoing packet timestamp reported by Catalyst Center.</div>
+    <div><strong>Observed Days</strong><br>The smaller of Days Unused and device uptime. A reboot limits how much continuous evidence is available.</div>
+    <div><strong>Confidence</strong><br>HIGH requires at least {{ report.observation_threshold_days }} days of device uptime. LOW means the evidence window is shorter.</div>
+    <div><strong>Unused Down</strong><br>A down, not-connected, or disabled port. It remains a review candidate, not an instruction to disable or reclaim the port.</div>
+  </section>
+  <footer>This report performs read-only collection. It does not modify Catalyst Center or switch configuration.</footer>
+</main></body></html>

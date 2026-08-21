@@ -1,0 +1,13 @@
+__pycache__/
+.ruff_cache/
+.pytest_cache/
+.venv/
+credentials/credentials.txt
+outputs/
+reports.local/
+sample_reports/dry_run/
+build/
+dist/
+*.egg-info/
+*.log
+*.pyc

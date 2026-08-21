@@ -1,0 +1,24 @@
+{
+  "devices": [
+    {
+      "site": "Example Cellular Site",
+      "name": "EXAMPLE-EDGE-01",
+      "host": "192.0.2.10",
+      "platform": "cisco_xe",
+      "transport": "cellular",
+      "site_type": "mobile_unit",
+      "edge_role": "single",
+      "service_vrfs": ["10"]
+    },
+    {
+      "site": "Example Fixed Site",
+      "name": "EXAMPLE-EDGE-02",
+      "host": "192.0.2.20",
+      "platform": "cisco_xe",
+      "transport": "fixed",
+      "site_type": "dual_edge_hub",
+      "edge_role": "primary",
+      "service_vrfs": ["10"]
+    }
+  ]
+}

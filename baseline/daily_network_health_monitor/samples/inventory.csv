@@ -1,0 +1,4 @@
+hostname,ip_address,device_type,enabled
+LAB-SW-01,192.0.2.10,switch,true
+LAB-ER-01,192.0.2.11,edge_router,true
+

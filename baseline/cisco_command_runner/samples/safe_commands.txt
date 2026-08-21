@@ -1,0 +1,4 @@
+# Approved operational commands, one per line
+show version
+show ip interface brief
+show interfaces status

@@ -1,0 +1,42 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cisco-operations-hub"
+version = "0.1.0"
+description = "Local browser interface for independently tested Cisco operational tools"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "jinja2>=3.1,<4",
+    "netmiko>=4.6,<5",
+    "openpyxl>=3.1,<4",
+    "orionsdk>=0.4,<1",
+    "requests>=2.32,<3",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10", "ruff>=0.12,<1", "ty>=0.0.1"]
+
+[project.scripts]
+cisco-operations-hub = "cisco_operations_hub.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cisco_operations_hub"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"web" = "cisco_operations_hub/web"
+"templates" = "cisco_operations_hub/templates"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = ["baseline"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

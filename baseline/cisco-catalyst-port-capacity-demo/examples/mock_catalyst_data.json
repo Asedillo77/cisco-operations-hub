@@ -1,0 +1,18 @@
+{
+  "devices": [
+    {"id": "11111111-1111-4111-8111-111111111111", "hostname": "LAB-SW-01.example.net", "managementIpAddress": "192.0.2.11", "upTime": "92 days, 4 hours", "uptimeSeconds": 7963200},
+    {"id": "22222222-2222-4222-8222-222222222222", "hostname": "LAB-SW-02.example.net", "managementIpAddress": "192.0.2.12", "upTime": "24 days, 2 hours", "uptimeSeconds": 2080800}
+  ],
+  "interfaces": {
+    "11111111-1111-4111-8111-111111111111": [
+      {"portName":"GigabitEthernet1/0/1","description":"Desk outlet","adminStatus":"UP","status":"UP","lastIncomingPacketTime":1786406400000,"lastOutgoingPacketTime":1786406460000},
+      {"portName":"GigabitEthernet1/0/2","description":"Spare outlet","adminStatus":"UP","status":"DOWN","lastIncomingPacketTime":1780272000000,"lastOutgoingPacketTime":1780272000000},
+      {"portName":"TenGigabitEthernet1/1/1","description":"Uplink module","adminStatus":"UP","status":"UP"},
+      {"portName":"Vlan10","description":"Logical interface","adminStatus":"UP","status":"UP"}
+    ],
+    "22222222-2222-4222-8222-222222222222": [
+      {"portName":"TwoGigabitEthernet1/0/1","description":"Wireless access point","adminStatus":"UP","status":"UP","lastIncomingPacketTime":1786406400000,"lastOutgoingPacketTime":1786406460000},
+      {"portName":"TwoGigabitEthernet1/0/2","description":"Unpatched outlet","adminStatus":"UP","status":"DOWN","lastIncomingPacketTime":1778544000000,"lastOutgoingPacketTime":1778544000000}
+    ]
+  }
+}

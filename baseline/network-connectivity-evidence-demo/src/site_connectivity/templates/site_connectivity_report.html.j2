@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Network Connectivity Evidence Explorer</title>
+    <style>
+        :root {
+            --teal-700: #0F766E;
+            --teal-900: #134E4A;
+            --white: #FFFFFF;
+            --black: #000000;
+            --amber: #D97706;
+            --teal: #0F766E;
+            --mint: #CCFBF1;
+            --sand: #FEF3C7;
+            --ice: #F0FDFA;
+            --grey: #F8FAFC;
+            --line: #CBD5E1;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 24px;
+            color: var(--black);
+            background: var(--white);
+            font-family: "Nunito Sans", Aptos, Arial, sans-serif;
+            line-height: 1.45;
+        }
+        .report {
+            max-width: 1100px;
+            margin: 0 auto;
+            border: 1px solid var(--line);
+            background: var(--white);
+        }
+        .header { padding: 24px; color: var(--white); background: linear-gradient(135deg, var(--teal-900), var(--teal-700)); }
+        .headline {
+            margin: 0 0 8px;
+            font-family: Aptos, "Segoe UI", Arial, sans-serif;
+            font-size: 2rem;
+            line-height: 1;
+        }
+        .intro { margin: 0; }
+        .summary-banner { margin: 14px 20px 0; padding: 14px; border-left: 8px solid var(--amber); background: var(--sand); }
+        .summary-healthy { border-left-color: var(--teal); background: var(--ice); }
+        .summary-degraded, .summary-unknown, .summary-planned { border-left-color: var(--amber); background: var(--sand); }
+        .summary-down { border-left-color: #B91C1C; background: #FEE2E2; }
+        .meta { margin: 12px 20px; padding: 10px 12px; border: 1px solid var(--line); }
+        .section { margin: 20px; border: 1px solid var(--line); break-inside: avoid; }
+        .section-header {
+            margin: 0;
+            padding: 10px 12px;
+            color: var(--white);
+            background: var(--teal-700);
+            font-family: Aptos, "Segoe UI", Arial, sans-serif;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+        }
+        .section-subheading { margin: 0; padding: 10px 12px; border-bottom: 1px solid var(--line); background: var(--ice); }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 12px; padding: 12px; }
+        .summary-card { padding: 12px; border: 1px solid var(--line); background: var(--white); }
+        .summary-card strong { display: block; font-size: 1.4rem; }
+        .health-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; padding: 12px; }
+        .health-card { padding: 10px; border: 1px solid var(--line); background: var(--white); }
+        .health-card-title { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-weight: 800; }
+        .priority-list { margin: 0; padding: 12px 12px 12px 32px; }
+        .priority-list li { margin-bottom: 9px; }
+        .device { margin: 12px; border: 1px solid var(--teal-900); }
+        .device-title { margin: 0; padding: 10px 12px; color: var(--white); background: var(--teal-900); }
+        .device-summary { padding: 12px; background: var(--grey); }
+        .pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 0.78rem; font-weight: 800; text-transform: uppercase; }
+        .pill-healthy { color: var(--white); background: var(--teal); }
+        .pill-informational { color: var(--white); background: var(--teal); }
+        .pill-degraded, .pill-unknown, .pill-planned { color: var(--black); background: var(--amber); }
+        .pill-down { color: var(--white); background: #B91C1C; }
+        .table-wrap { width: 100%; overflow-x: auto; padding: 12px; }
+        table { width: max-content; min-width: 100%; table-layout: auto; border-collapse: collapse; font-size: 0.88rem; }
+        th, td { padding: 8px 10px; border: 1px solid var(--line); text-align: left; vertical-align: top; white-space: normal; }
+        th { color: var(--white); background: var(--teal-900); text-transform: uppercase; }
+        tbody tr:nth-child(even) { background: var(--ice); }
+        details { margin: 8px 12px 12px; }
+        pre { max-height: 360px; overflow: auto; padding: 12px; color: #EEEEEE; background: #222222; white-space: pre-wrap; word-break: break-word; }
+        .footer { padding: 14px 20px; border-top: 2px solid var(--teal-700); font-size: 0.82rem; }
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .header { padding: 18px; }
+            .section, .summary-banner, .meta { margin-left: 10px; margin-right: 10px; }
+            .headline { font-size: 1.55rem; }
+        }
+        @media print {
+            body { padding: 0; }
+            .report { max-width: none; border: 0; }
+            details { display: none; }
+        }
+    </style>
+</head>
+<body>
+<main class="report">
+    <header class="header">
+        <h1 class="headline">Network Connectivity Evidence Explorer</h1>
+        <p class="intro">Plain-language connectivity assessment backed by read-only technical evidence.</p>
+    </header>
+
+    <aside class="summary-banner summary-{{ report.overall_status }}">
+        <strong>{{ report.overall_status | upper }}:</strong> {{ report.summary }}
+    </aside>
+    <div class="meta">
+        <strong>Site:</strong> {{ report.meta.site }} &nbsp;|&nbsp;
+        <strong>Generated:</strong> {{ report.meta.generated_at }} &nbsp;|&nbsp;
+        <strong>Mode:</strong> {{ "Dry run" if report.meta.dry_run else "Live read-only collection" }}
+    </div>
+
+    <section class="section">
+        <h2 class="section-header">1. Investigation Summary</h2>
+        <p class="section-subheading">Start here. Unknown means that the available evidence could not safely confirm health or failure.</p>
+        <div class="summary-grid">
+            <div class="summary-card"><strong>{{ report.meta.device_count }}</strong>Devices</div>
+            <div class="summary-card"><strong>{{ report.counts.healthy }}</strong>Healthy</div>
+            <div class="summary-card"><strong>{{ report.counts.degraded }}</strong>Degraded</div>
+            <div class="summary-card"><strong>{{ report.counts.down }}</strong>Down</div>
+            <div class="summary-card"><strong>{{ report.counts.unknown }}</strong>Unable to verify</div>
+            <div class="summary-card"><strong>{{ report.counts.informational }}</strong>Information</div>
+        </div>
+        {% for device in report.devices %}
+        <h3 class="section-subheading">{{ device.target.name }} health overview</h3>
+        <div class="health-grid">
+            {% for item in device.health_overview %}
+            <div class="health-card">
+                <div class="health-card-title"><span>{{ item.label }}</span><span class="pill pill-{{ item.status }}">{{ item.status }}</span></div>
+                <small>{{ item.message }}</small>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+        <h3 class="section-subheading">Priority findings and next steps</h3>
+        {% if report.priority_findings %}
+        <ol class="priority-list">
+            {% for finding in report.priority_findings %}
+            <li><strong>{{ finding.device }} — {{ finding.label }}:</strong> {{ finding.summary }}<br><strong>Next:</strong> {{ finding.action }}</li>
+            {% endfor %}
+        </ol>
+        {% else %}
+        <p style="padding: 0 12px 12px;">No degraded or down findings were identified.</p>
+        {% endif %}
+    </section>
+
+    <section class="section">
+        <h2 class="section-header">2. Device Results</h2>
+        <p class="section-subheading">Each conclusion correlates reachability, SSH access, and the available device evidence.</p>
+        {% for device in report.devices %}
+        <article class="device">
+            <h3 class="device-title">{{ device.target.name }} — {{ device.target.host }}</h3>
+            <div class="device-summary">
+                <span class="pill pill-{{ device.status }}">{{ device.status }}</span>
+                {{ device.summary }}<br>
+                <small>Site type: {{ device.target.site_type_label }} |
+                Expected transport: {{ device.target.transport | replace('_', ' ') | title }}</small>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Check</th><th>Status</th><th>What this means</th><th>Recommended action</th></tr></thead>
+                    <tbody>
+                        <tr>
+                            <td>Ping reachability</td>
+                            <td><span class="pill pill-{{ device.ping.status }}">{{ device.ping.status }}</span></td>
+                            <td>
+                                {{ device.ping.message }}
+                                {% if device.ping.loss_percent is not none %}<br>Loss: {{ device.ping.loss_percent }}%.{% endif %}
+                                {% if device.ping.loss_explanation %}<br><strong>{{ device.ping.loss_rating | title }} loss:</strong> {{ device.ping.loss_explanation }}{% endif %}
+                                {% if device.ping.average_ms is not none %}<br>Latency: min {{ device.ping.minimum_ms }} ms / average {{ device.ping.average_ms }} ms / max {{ device.ping.maximum_ms }} ms.{% endif %}
+                                {% if device.ping.latency_explanation %}<br><strong>{{ device.ping.latency_rating | title }}:</strong> {{ device.ping.latency_explanation }}{% endif %}
+                            </td>
+                            <td>{{ "Review the network path or site power state." if device.ping.status == "down" else "Correlate with SSH and tunnel checks below." }}</td>
+                        </tr>
+                        <tr>
+                            <td>SSH collection</td>
+                            <td><span class="pill pill-{{ device.ssh_status }}">{{ device.ssh_status }}</span></td>
+                            <td>{{ device.ssh_message }}</td>
+                            <td>{{ "Check credentials, management access, and device availability." if device.ssh_status == "down" else "No SSH-specific action is indicated." }}</td>
+                        </tr>
+                        {% for check in device.checks %}
+                        <tr>
+                            <td>{{ check.check_id | replace('_', ' ') | title }}<br><small>{{ check.command }}</small></td>
+                            <td><span class="pill pill-{{ check.status }}">{{ check.status }}</span></td>
+                            <td>
+                                <strong>{{ check.summary }}</strong><br>{{ check.explanation }}
+                                {% if check.evidence.observed_transport is defined %}<br><strong>Observed transport:</strong> {{ check.evidence.observed_transport | replace('_', ' ') | title }}{% endif %}
+                                {% if check.evidence.active_cellular_providers is defined and check.evidence.active_cellular_providers %}<br><strong>Active provider:</strong> {{ check.evidence.active_cellular_providers | join(', ') }}{% endif %}
+                                {% if check.evidence.node_status is defined %}<br><strong>Current SolarWinds node status:</strong> {{ check.evidence.node_status }}{% endif %}
+                                {% if check.evidence.node_status_detail is defined %}<br><strong>Monitoring detail:</strong> {{ check.evidence.node_status_detail }}{% endif %}
+                                {% if check.evidence.node is defined %}
+                                    {% if check.evidence.node.LastSync is defined and check.evidence.node.LastSync %}<br><strong>SolarWinds last sync:</strong> {{ check.evidence.node.LastSync }}{% endif %}
+                                    {% if check.evidence.node.MachineType is defined and check.evidence.node.MachineType %}<br><strong>Monitored device:</strong> {{ check.evidence.node.MachineType }}{% if check.evidence.node.IOSVersion %}, IOS {{ check.evidence.node.IOSVersion }}{% endif %}{% endif %}
+                                {% endif %}
+                                {% if check.evidence.age_summary is defined %}<br><strong>Alert age:</strong> {{ check.evidence.age_summary | capitalize }}.{% endif %}
+                                {% if check.evidence.assessments is defined %}
+                                    <ul>
+                                    {% for metric, assessment in check.evidence.assessments.items() %}
+                                        <li><strong>{{ metric | replace('_dbm', '') | replace('_db', '') | upper }} — {{ assessment.rating | upper }}:</strong> {{ assessment.explanation }}</li>
+                                    {% endfor %}
+                                    </ul>
+                                {% endif %}
+                                {% if check.evidence.planes is defined %}
+                                    <ul>
+                                    {% for plane in check.evidence.planes %}
+                                        <li><strong>{{ plane.name }}:</strong> <span class="pill pill-{{ plane.status }}">{{ plane.status }}</span> {{ plane.summary }}</li>
+                                    {% endfor %}
+                                    </ul>
+                                    {% if check.evidence.vrf_routing_verified is sameas false %}<br><strong>Service VRF routing:</strong> Not yet verified; configured VRF reference(s): {{ check.evidence.service_vrfs | join(', ') }}.{% endif %}
+                                {% endif %}
+                                {% if check.evidence.alerts is defined and check.evidence.alerts %}
+                                    <br><strong>Active alerts:</strong> {{ check.evidence.alert_count }}
+                                    {% if check.evidence.stale_alert_count is defined %} | At least 24 hours old: {{ check.evidence.stale_alert_count }}{% endif %}
+                                    {% if check.evidence.interface_alert_matches is defined %} | Matched interfaces: {{ check.evidence.interface_alert_matches }} | Currently up/up: {{ check.evidence.interface_alerts_currently_up }}{% endif %}
+                                    <details><summary>Show active alert details</summary>
+                                    <ul>
+                                    {% for alert in check.evidence.alerts %}
+                                        <li><strong>{{ alert.AlertName }}</strong>{% if alert.Severity is not none %} (severity {{ alert.Severity }}){% endif %}{% if alert.TriggeredDateTime %}, triggered {{ alert.TriggeredDateTime }}{% endif %}{% if alert.AgeText %} ({{ alert.AgeText }}){% endif %}{% if alert.TriggeredMessage %}<br>{{ alert.TriggeredMessage }}{% endif %}{% if alert.InterfaceCurrentlyUp is defined %}<br>Current matched interface: {{ "up/up" if alert.InterfaceCurrentlyUp else "not up/up" }}{% endif %}</li>
+                                    {% endfor %}
+                                    </ul>
+                                    </details>
+                                {% endif %}
+                            </td>
+                            <td>{{ check.recommended_action }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if device.ping.raw_output %}<details><summary>Raw ping evidence</summary><pre>{{ device.ping.raw_output }}</pre></details>{% endif %}
+            {% for check in device.checks if check.raw_output %}<details><summary>Raw evidence — {{ check.command }}</summary><pre>{{ check.raw_output }}</pre></details>{% endfor %}
+        </article>
+        {% endfor %}
+    </section>
+
+    <section class="section">
+        <h2 class="section-header">3. Cellular Measurement Guide</h2>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Measurement</th><th>Plain-language meaning</th></tr></thead>
+                <tbody>
+                    <tr><td>RSSI</td><td>Supporting wideband power: excellent above −65 dBm; good −65 to −75; fair −75 to −85; poor below −85.</td></tr>
+                    <tr><td>RSRP</td><td>LTE coverage strength: excellent at −80 dBm or better; good to −90; marginal to −100; poor below −100.</td></tr>
+                    <tr><td>RSRQ</td><td>LTE quality: excellent at −10 dB or better; good to −15; marginal to −20; poor at −20 or below.</td></tr>
+                    <tr><td>SINR / SNR</td><td>Signal clarity: excellent at 20 dB or better; good from 13; marginal above 0; poor at 0 or below.</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="section-subheading">Signal reference: Teltonika Networks Mobile Signal Strength Recommendations. RSSI is not used alone when RSRP, RSRQ, or SINR are available.</p>
+    </section>
+
+    <section class="section">
+        <h2 class="section-header">4. Latency Guide</h2>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Average latency</th><th>Initial interpretation</th></tr></thead>
+                <tbody>
+                    <tr><td>150 ms or less</td><td>Good — within the initial operational target.</td></tr>
+                    <tr><td>Over 150 to 300 ms</td><td>Elevated — may be noticeable, especially for interactive applications.</td></tr>
+                    <tr><td>Over 300 to 500 ms</td><td>Poor — likely to cause noticeable slowness or delayed responses.</td></tr>
+                    <tr><td>Over 500 ms</td><td>Very poor — severe application impact is likely even if ping succeeds.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="section">
+        <h2 class="section-header">5. Packet-Loss Guide</h2>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Observed loss</th><th>Initial interpretation</th></tr></thead>
+                <tbody>
+                    <tr><td>0%</td><td>No loss observed during this sample.</td></tr>
+                    <tr><td>Over 0 to 10%</td><td>Intermittent — may cause brief pauses, retries, or unstable interactive sessions.</td></tr>
+                    <tr><td>Over 10 to 25%</td><td>High — likely to affect application reliability and performance.</td></tr>
+                    <tr><td>Over 25%</td><td>Severe — the connection may appear intermittent or unusable.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+    <footer class="footer">Results are diagnostic evidence, not proof of root cause. Escalations should include this report and the time of user impact.</footer>
+</main>
+</body>
+</html>

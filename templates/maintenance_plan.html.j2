@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Maintenance Validation Plan</title>
+  <style>
+    :root { --ink: #102a43; --muted: #52667a; --line: #d8e2eb; --accent: #007f86; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f5f8fa; color: var(--ink); font: 15px/1.5 Arial, sans-serif; }
+    main { width: min(1120px, calc(100% - 32px)); margin: 32px auto; }
+    header, section { background: white; border: 1px solid var(--line); border-radius: 10px; }
+    header { padding: 24px; border-top: 6px solid var(--accent); }
+    section { margin-top: 18px; padding: 20px; overflow-x: auto; }
+    h1, h2 { margin-top: 0; }
+    p { color: var(--muted); }
+    dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 18px; }
+    dt { font-weight: 700; } dd { margin: 0; overflow-wrap: anywhere; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { background: #eaf5f5; } td { max-width: 760px; overflow-wrap: anywhere; }
+  </style>
+</head>
+<body><main>
+  <header><h1>Maintenance Validation Plan</h1><p>{{ report.summary }}</p><p>Dry-run · {{ report.generated_at }} · No device connections were made.</p></header>
+  <section><h2>Plan summary</h2><dl>
+  {% for key, value in report.details.items() if key != "commands_by_device" %}<dt>{{ key|replace("_", " ")|title }}</dt><dd>{{ value }}</dd>{% endfor %}
+  </dl></section>
+  <section><h2>Commands by device</h2><table><thead><tr><th>Device</th><th>Planned commands</th></tr></thead><tbody>
+  {% for device, commands in report.details.commands_by_device.items() %}<tr><td>{{ device }}</td><td>{{ commands|join(", ") }}</td></tr>{% endfor %}
+  </tbody></table></section>
+</main></body></html>

@@ -1,0 +1,21 @@
+{
+  "device_type": "switch",
+  "netmiko_device_type": "cisco_ios",
+  "thresholds": {
+    "cpu_warning_percent": 80,
+    "cpu_critical_percent": 90,
+    "memory_warning_percent": 80,
+    "memory_critical_percent": 90
+  },
+  "commands": [
+    "show switch",
+    "show platform resources",
+    "show interface status",
+    "show interface status | in connected",
+    "show cdp neighbors",
+    "show power inline",
+    "show environment all",
+    "show lldp neighbors"
+  ]
+}
+

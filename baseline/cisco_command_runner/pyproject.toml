@@ -1,0 +1,42 @@
+[project]
+name = "cisco-command-runner-demo"
+version = "0.1.0"
+description = "Dry-run-first GUI and CLI operational command runner for Cisco network devices"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "jinja2>=3.1.6",
+    "netmiko>=4.6.0",
+    "openpyxl>=3.1.5",
+]
+authors = [{ name = "Dante Rivera" }]
+
+[project.scripts]
+cisco-command-runner = "cisco_command_runner.cli:main"
+cisco-command-runner-gui = "cisco_command_runner.gui:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.1",
+    "ruff>=0.12.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cisco_command_runner"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"templates" = "cisco_command_runner/templates"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
